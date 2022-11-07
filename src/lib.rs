@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::Read;
 use std::str::FromStr;
 
 #[derive(Debug, Clone)]
@@ -8,6 +10,46 @@ pub struct INI(Vec<Section>);
 pub struct Section {
     name: String,
     map: HashMap<String, Option<String>>,
+}
+
+/// ```
+/// use ini_lib::ini_str;
+/// let a = "[Interface]
+/// Address = 10.1.1.2/24
+/// PrivateKey = keykeykeykey
+/// ListenPort = 51820
+/// DNS = 8.8.8.8
+///
+/// [Peer]
+/// PublicKey = keykeykeykeykeykeykeykey
+/// Endpoint = 1.1.1.1:51820
+/// AllowedIPs = 10.1.1.5/32
+///
+/// [Peer]
+/// PublicKey = keykeykeykeykeykeykeykeykeykeykeykey
+/// PresharedKey = keykeykeykeykeykeykeykeykeykeykeykeykeykeykeykey
+/// Endpoint = 2.2.2.2:51820
+/// AllowedIPs = 10.13.13.0/24
+/// PersistentKeepalive = 25";
+///
+/// println!("{:#?}",ini_str!(a));
+/// ```
+#[macro_export]
+macro_rules! ini_str {
+    {$($data: expr),+} => {{
+		($($crate::INI::from_str($data)),+)
+	}};
+}
+
+///```
+/// use ini_lib::ini_file;
+/// println!("{:#?}",ini_file!("test.ini"));
+/// ```
+#[macro_export]
+macro_rules! ini_file {
+    {$($data: expr),+} => {{
+		($($crate::INI::from_file($data)),+)
+	}};
 }
 
 impl Default for Section {
@@ -20,10 +62,10 @@ impl Default for Section {
 }
 
 impl Section {
-    fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.name.is_empty()
     }
-    fn clear(&mut self) {
+    pub fn clear(&mut self) {
         self.name = String::new();
         self.map.clear();
     }
@@ -85,10 +127,21 @@ impl FromStr for INI {
     }
 }
 
-
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+impl INI {
+    pub fn from_file(path: &str) -> Result<Self, String> {
+        return match File::open(path) {
+            Ok(mut s) => {
+                let mut buf = String::new();
+                return match s.read_to_string(&mut buf) {
+                    Ok(_) => { buf.parse() }
+                    Err(err) => { Err(err.to_string()) }
+                };
+            }
+            Err(err) => { Err(err.to_string()) }
+        };
+    }
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -97,22 +150,24 @@ mod tests {
     #[test]
     fn it_works() {
         let a = "[Interface]
-Address = 10.13.13.2/24
-PrivateKey = OA2x4YFBii8pgEPvm9Nb7IsBamyfNlTg1lA5m5wyrUo=
+Address = 10.1.1.2/24
+PrivateKey = keykeykeykey
 ListenPort = 51820
 DNS = 8.8.8.8
 
 [Peer]
-PublicKey = /A/8ru1OOVcrDMljZcHgxWYH5groyynHxcAdpRca21s=
-Endpoint = 116.31.232.209:51820
-AllowedIPs = 10.13.13.5/32
+PublicKey = keykeykeykeykeykeykeykey
+Endpoint = 1.1.1.1:51820
+AllowedIPs = 10.1.1.5/32
 
-;[Peer]
- ;PublicKey = SoznFdDKSTgvAIeCMpYHH2y4xvaqJObS3l4AY3XVRzY=
-   #PresharedKey = kguCX9oPV/ACCuaeVOX5OJ9YeLEywsn2oGkCTYN7Fco=
-Endpoint = 81.71.149.31:51820
-AllowedIPs = 10.13.13.0/24,192.168.31.1/32
+[Peer]
+PublicKey = keykeykeykeykeykeykeykeykeykeykeykey
+PresharedKey = keykeykeykeykeykeykeykeykeykeykeykeykeykeykeykey
+Endpoint = 2.2.2.2:51820
+AllowedIPs = 10.13.13.0/24
 PersistentKeepalive = 25";
-        println!("{:#?}", a.parse::<INI>());
+
+        println!("{:#?}", ini_str!(a));
     }
+
 }
