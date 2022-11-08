@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
-use std::str::FromStr;
 
 #[derive(Debug, Clone)]
 pub struct INI;
