@@ -73,7 +73,7 @@ impl Section {
 }
 
 
-fn from_str(s: &str) -> Result<Vec<Section>, String> {
+pub fn from_str(s: &str) -> Result<Vec<Section>, String> {
     let data = s
         .trim()
         .split("\n")
