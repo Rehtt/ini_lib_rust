@@ -24,3 +24,8 @@ println!("{:#?}",ini_str!(a));
  use ini_lib::ini_file;
  println!("{:#?}",ini_file!("test.ini"));
 ```
+
+# Record
+> 0.1.1 fix
+
+> 0.1.0 init 

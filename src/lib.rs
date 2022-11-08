@@ -4,7 +4,7 @@ use std::io::Read;
 use std::str::FromStr;
 
 #[derive(Debug, Clone)]
-pub struct INI(Vec<Section>);
+pub struct INI;
 
 #[derive(Debug, Clone)]
 pub struct Section {
@@ -37,7 +37,7 @@ pub struct Section {
 #[macro_export]
 macro_rules! ini_str {
     {$($data: expr),+} => {{
-		($($crate::INI::from_str($data)),+)
+		($($crate::from_str($data)),+)
 	}};
 }
 
@@ -48,7 +48,7 @@ macro_rules! ini_str {
 #[macro_export]
 macro_rules! ini_file {
     {$($data: expr),+} => {{
-		($($crate::INI::from_file($data)),+)
+		($($crate::from_file($data)),+)
 	}};
 }
 
@@ -72,74 +72,68 @@ impl Section {
 }
 
 
-impl FromStr for INI {
-    type Err = String;
+fn from_str(s: &str) -> Result<Vec<Section>, String> {
+    let data = s
+        .trim()
+        .split("\n")
+        .filter(|x| {
+            let xx = x.trim();
+            !(xx.starts_with(";") || xx.starts_with("#"))
+        })
+        .map(|x| {
+            x.trim()
+                .split("=")
+                .map(|x| x.trim())
+                .filter(|x| {
+                    !x.to_string().eq("")
+                })
+                .collect::<Vec<_>>()
+        })
+        .filter(|x| !x.is_empty())
+        .collect::<Vec<_>>();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let data = s
-            .trim()
-            .split("\n")
-            .filter(|x| {
-                let xx = x.trim();
-                !(xx.starts_with(";") || xx.starts_with("#"))
-            })
-            .map(|x| {
-                x.trim()
-                    .split("=")
-                    .map(|x| x.trim())
-                    .filter(|x| {
-                        !x.to_string().eq("")
-                    })
-                    .collect::<Vec<_>>()
-            })
-            .filter(|x| !x.is_empty())
-            .collect::<Vec<_>>();
-
-        let mut tmp_section = Section::default();
-        let mut tmp_map: HashMap<String, Option<String>> = HashMap::new();
-        let mut amaps = Vec::new();
-        for x in data {
-            if x[0].starts_with("[") && x[0].ends_with("]") {
-                if !tmp_section.is_empty() {
-                    if !tmp_map.is_empty() {
-                        tmp_section.map = tmp_map.clone();
-                        tmp_map.clear();
-                    }
-                    amaps.push(tmp_section.clone());
-                    tmp_section.clear();
+    let mut tmp_section = Section::default();
+    let mut tmp_map: HashMap<String, Option<String>> = HashMap::new();
+    let mut amaps = Vec::new();
+    for x in data {
+        if x[0].starts_with("[") && x[0].ends_with("]") {
+            if !tmp_section.is_empty() {
+                if !tmp_map.is_empty() {
+                    tmp_section.map = tmp_map.clone();
+                    tmp_map.clear();
                 }
-                tmp_section.name = x[0].trim_start_matches('[').trim_end_matches(']').to_string();
-                continue;
+                amaps.push(tmp_section.clone());
+                tmp_section.clear();
             }
-            if x.len() < 2 {
-                tmp_map.insert(x[0].to_string(), None);
-                continue;
-            }
-            tmp_map.insert(x[0].to_string(), Some(x[1].to_string()));
+            tmp_section.name = x[0].trim_start_matches('[').trim_end_matches(']').to_string();
+            continue;
         }
-        if !tmp_section.is_empty() {
-            if !tmp_map.is_empty() {
-                tmp_section.map = tmp_map.clone();
-            }
-            amaps.push(tmp_section.clone());
+        if x.len() < 2 {
+            tmp_map.insert(x[0].to_string(), None);
+            continue;
         }
-        Ok(Self(amaps))
+        tmp_map.insert(x[0].to_string(), Some(x[1].to_string()));
     }
+    if !tmp_section.is_empty() {
+        if !tmp_map.is_empty() {
+            tmp_section.map = tmp_map.clone();
+        }
+        amaps.push(tmp_section.clone());
+    }
+    Ok(amaps)
 }
 
-impl INI {
-    pub fn from_file(path: &str) -> Result<Self, String> {
-        return match File::open(path) {
-            Ok(mut s) => {
-                let mut buf = String::new();
-                return match s.read_to_string(&mut buf) {
-                    Ok(_) => { buf.parse() }
-                    Err(err) => { Err(err.to_string()) }
-                };
-            }
-            Err(err) => { Err(err.to_string()) }
-        };
-    }
+pub fn from_file(path: &str) -> Result<Vec<Section>, String> {
+    return match File::open(path) {
+        Ok(mut s) => {
+            let mut buf = String::new();
+            return match s.read_to_string(&mut buf) {
+                Ok(_) => { from_str(buf.as_str()) }
+                Err(err) => { Err(err.to_string()) }
+            };
+        }
+        Err(err) => { Err(err.to_string()) }
+    };
 }
 
 
@@ -169,5 +163,4 @@ PersistentKeepalive = 25";
 
         println!("{:#?}", ini_str!(a));
     }
-
 }
