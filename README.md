@@ -26,6 +26,8 @@ println!("{:#?}",ini_str!(a));
 ```
 
 # Record
+> 0.1.2 fix
+
 > 0.1.1 fix
 
 > 0.1.0 init 

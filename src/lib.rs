@@ -7,9 +7,11 @@ pub struct INI;
 
 #[derive(Debug, Clone)]
 pub struct Section {
-    name: String,
-    map: HashMap<String, Option<String>>,
+    pub name: String,
+    pub sub: HashMap<String, Option<String>>,
 }
+
+
 
 /// ```
 /// use ini_lib::ini_str;
@@ -55,7 +57,7 @@ impl Default for Section {
     fn default() -> Self {
         Self {
             name: String::new(),
-            map: HashMap::new(),
+            sub: HashMap::new(),
         }
     }
 }
@@ -66,7 +68,7 @@ impl Section {
     }
     pub fn clear(&mut self) {
         self.name = String::new();
-        self.map.clear();
+        self.sub.clear();
     }
 }
 
@@ -98,7 +100,7 @@ fn from_str(s: &str) -> Result<Vec<Section>, String> {
         if x[0].starts_with("[") && x[0].ends_with("]") {
             if !tmp_section.is_empty() {
                 if !tmp_map.is_empty() {
-                    tmp_section.map = tmp_map.clone();
+                    tmp_section.sub = tmp_map.clone();
                     tmp_map.clear();
                 }
                 amaps.push(tmp_section.clone());
@@ -115,7 +117,7 @@ fn from_str(s: &str) -> Result<Vec<Section>, String> {
     }
     if !tmp_section.is_empty() {
         if !tmp_map.is_empty() {
-            tmp_section.map = tmp_map.clone();
+            tmp_section.sub = tmp_map.clone();
         }
         amaps.push(tmp_section.clone());
     }
