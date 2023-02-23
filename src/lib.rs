@@ -8,7 +8,7 @@ pub struct INI;
 #[derive(Debug, Clone)]
 pub struct Section {
     pub name: String,
-    pub sub: HashMap<String, Option<String>>,
+    pub sub: HashMap<String, Vec<String>>,
 }
 
 
@@ -94,7 +94,7 @@ pub fn from_str(s: &str) -> Result<Vec<Section>, String> {
         .collect::<Vec<_>>();
 
     let mut tmp_section = Section::default();
-    let mut tmp_map: HashMap<String, Option<String>> = HashMap::new();
+    let mut tmp_map: HashMap<String, Vec<String>> = HashMap::new();
     let mut amaps = Vec::new();
     for x in data {
         if x[0].starts_with("[") && x[0].ends_with("]") {
@@ -110,10 +110,11 @@ pub fn from_str(s: &str) -> Result<Vec<Section>, String> {
             continue;
         }
         if x.len() < 2 {
-            tmp_map.insert(x[0].to_string(), None);
+            tmp_map.insert(x[0].to_string(), Vec::new());
             continue;
         }
-        tmp_map.insert(x[0].to_string(), Some(x[1].to_string()));
+
+        tmp_map.entry(x[0].to_string()).or_insert_with(Vec::new).push(x[1].to_string());
     }
     if !tmp_section.is_empty() {
         if !tmp_map.is_empty() {
@@ -154,6 +155,7 @@ DNS = 8.8.8.8
 PublicKey = keykeykeykeykeykeykeykey
 Endpoint = 1.1.1.1:51820
 AllowedIPs = 10.1.1.5/32
+AllowedIPs = 10.1.1.2/32
 
 [Peer]
 PublicKey = keykeykeykeykeykeykeykeykeykeykeykey

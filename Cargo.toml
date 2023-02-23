@@ -1,6 +1,6 @@
 [package]
 name = "ini_lib"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 description = "一个简单解析ini的库，允许重名[Section]"
 license = "MIT"
